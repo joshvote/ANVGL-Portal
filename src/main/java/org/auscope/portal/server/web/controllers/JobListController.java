@@ -751,10 +751,12 @@ public class JobListController extends BaseCloudController  {
     }
 
     /**
-     * Returns a JSON object containing an array of jobs for the given series.
+     * Returns a JSON object containing an array of jobs
      *
      * @param request The servlet request including a seriesId parameter
      * @param response The servlet response
+     * @param seriesId If non null, restrict all jobs to this ID
+     * @param jobId If non null, only return the job with this ID (if the user permissions allow it)
      *
      * @return A JSON object with a jobs attribute which is an array of
      *         <code>VEGLJob</code> objects.
@@ -762,35 +764,44 @@ public class JobListController extends BaseCloudController  {
     @RequestMapping("/secure/listJobs.do")
     public ModelAndView listJobs(HttpServletRequest request,
             HttpServletResponse response,
-            @RequestParam("seriesId") Integer seriesId,
+            @RequestParam(required=false, value="jobId") Integer jobId,
+            @RequestParam(required=false, value="seriesId") Integer seriesId,
             @RequestParam(required=false, value="forceStatusRefresh", defaultValue="false") boolean forceStatusRefresh,
             @AuthenticationPrincipal ANVGLUser user) {
-        VEGLSeries series = attemptGetSeries(seriesId, user);
-        if (series == null) {
-            return generateJSONResponseMAV(false, null, "Unable to lookup job series.");
+
+        List<VEGLJob> jobs = null;
+
+        if (jobId != null) {
+            VEGLJob job = attemptGetJob(jobId, user);
+            if (job == null) {
+                return generateJSONResponseMAV(false, null, "Unable to lookup job.");
+            }
+
+            jobs = Arrays.asList(job);
+        } else if (seriesId == null) {
+            jobs = jobManager.getUserJobs(user);
+        } else {
+            VEGLSeries series = attemptGetSeries(seriesId, user);
+            if (series == null) {
+                return generateJSONResponseMAV(false, null, "Unable to lookup job series.");
+            }
+
+            jobs = jobManager.getSeriesJobs(seriesId.intValue(), user);
+            if (jobs == null) {
+                return generateJSONResponseMAV(false, null, "Unable to lookup jobs for the specified series.");
+            }
         }
 
-        List<VEGLJob> seriesJobs = jobManager.getSeriesJobs(seriesId.intValue(), user);
-        if (seriesJobs == null) {
-            return generateJSONResponseMAV(false, null, "Unable to lookup jobs for the specified series.");
-        }
-
-//        for (VEGLJob veglJob : seriesJobs) {
-//          veglJob.setProperty(CloudJob.PROPERTY_STS_ARN, user.getArnExecution());
-//          veglJob.setProperty(CloudJob.PROPERTY_CLIENT_SECRET, user.getAwsSecret());
-//          veglJob.setProperty(CloudJob.PROPERTY_S3_ROLE, user.getArnStorage());
-//        }
-//
         if (forceStatusRefresh) {
             try {
-                jobStatusMonitor.statusUpdate(seriesJobs);
+                jobStatusMonitor.statusUpdate(jobs);
             } catch (JobStatusException e) {
                 log.info("There was an error updating one or more jobs: " + e.getMessage());
                 log.debug("Exception(s): ", e);
             }
         }
 
-        return generateJSONResponseMAV(true, seriesJobs, "");
+        return generateJSONResponseMAV(true, jobs, "");
     }
 
     /**

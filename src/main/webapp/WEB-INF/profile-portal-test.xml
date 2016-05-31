@@ -37,6 +37,8 @@
                 <ref bean="knownTypeGswa80mThmerge"/>
                 <ref bean="knownTypeGswa80mUmerge"/>
                 
+                <ref bean="knownTypeVLJobs"/>
+                
                 <!-- <ref bean="knownTypeCunyuAem" />  -->
             </list>
         </constructor-arg>

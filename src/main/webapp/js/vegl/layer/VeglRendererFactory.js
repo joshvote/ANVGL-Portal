@@ -19,6 +19,10 @@ Ext.define('vegl.layer.VeglRendererFactory', {
 
         if (source instanceof portal.knownlayer.KnownLayer) {
             switch (source.get('id')) {
+                case 'vl-jobs':
+                    return Ext.create('vegl.layer.renderer.JobRenderer', {
+                        map : this.map
+                    });
                 case 'geophysics-datasets':
                     return Ext.create('portal.layer.renderer.csw.CSWRenderer', {
                         map : this.map,

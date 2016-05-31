@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix='security' uri='http://www.springframework.org/security/tags' %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
    "http://www.w3.org/TR/html4/loose.dtd">
 
@@ -20,6 +21,14 @@
          var NVCL_WEB_SERVICE_IP = "${nvclWebServiceIP}";
          var WEB_CONTEXT = '<%= request.getContextPath() %>';
          var NEW_SESSION = "${isNewSession}";
+
+         <security:authorize ifAllGranted="ROLE_ANONYMOUS">
+         var VL_AUTHENTICATED = false;
+         </security:authorize>
+
+         <security:authorize ifNotGranted="ROLE_ANONYMOUS">
+         var VL_AUTHENTICATED = true;
+         </security:authorize>
       </script>
 
           
@@ -51,8 +60,6 @@
         </style>
         
       <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon" />
-
-      <script src="js/vegl/models/Download.js" type="text/javascript"></script>
    </head>
 
    <body>

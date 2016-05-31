@@ -27,6 +27,8 @@ Ext.define('vegl.layer.VeglQuerierFactory', {
                 return Ext.create('vegl.layer.querier.csw.SelectableCSWQuerier', cfg);
             } else if (knownLayer.get('id') === 'geophysics-datasets') {
                 return Ext.create('vegl.layer.querier.csw.GAProjectsQuerier', cfg);
+            } else if (knownLayer.get('id') === 'vl-jobs') {
+                return Ext.create('vegl.layer.querier.JobQuerier', cfg);
             }
         }
 
