@@ -16,31 +16,29 @@ Ext.define('vegl.layer.querier.JobQuerier', {
     query : function(queryTarget, callback) {
 
         var jobId = queryTarget.get('id');
-        Ext.Ajax.request({
-            url: 'secure/listJobs.do',
-            params: {
-                jobId: jobId
-            },
-            scope: this,
-            callback: function(options, success, response) {
-                if (!success) {
-                    callback(this, [], queryTarget);
-                    return;
+        var job = queryTarget.get('layer').get('renderer').jobStore.getById(jobId);
+
+        if (!job) {
+            callback(this, [], queryTarget);
+            return;
+        }
+
+
+        var panel = Ext.create('portal.layer.querier.BaseComponent', {
+            border : false,
+            autoScroll : true,
+            items: [{
+                xtype: 'detailspanel',
+                width: 400,
+                height: 350,
+                listeners: {
+                    afterrender: function(detailsPanel) {
+                        detailsPanel.showDetailsForJob(job);
+                    }
                 }
-
-                var responseObj = Ext.JSON.decode(response.responseText);
-                if (!responseObj.success) {
-                    callback(this, [], queryTarget);
-                    return;
-                }
-
-
-            }
+            }]
         });
-
-
-        //console.log(queryTarget);
-        //callback(this, [], queryTarget);
+        callback(this, [panel], queryTarget);
 
         /*var cswRecord = queryTarget.get('cswRecord');
         if (!cswRecord) {

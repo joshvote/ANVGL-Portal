@@ -498,6 +498,49 @@ public class JobListController extends BaseCloudController  {
         return generateJSONResponseMAV(true, fileDetails, "");
     }
 
+    /**
+     * Returns a JSON object keyed by jobId's, each containing an array of files
+     * that specific job.
+     *
+     * @param request The servlet request including a jobId parameter
+     * @param response The servlet response
+     *
+     * @return A JSON object with a files attribute which is an array of
+     *         FileInformation objects. If the job was not found in the job
+     *         manager the JSON object will contain an error attribute
+     *         indicating the error.
+     */
+    @RequestMapping("/secure/manyJobFiles.do")
+    public ModelAndView manyJobFiles(HttpServletRequest request,
+            HttpServletResponse response,
+            @RequestParam("jobId") Integer[] jobIds,
+            @AuthenticationPrincipal ANVGLUser user) {
+
+        HashMap<String, CloudFileInformation[]> fileMap = new HashMap<String, CloudFileInformation[]>();
+        try {
+            for (Integer jobId : jobIds) {
+                VEGLJob job = attemptGetJob(jobId, user);
+                if (job == null) {
+                    return generateJSONResponseMAV(false, null, "The requested job" + jobId + " was not found.");
+                }
+
+                CloudStorageService cloudStorageService = getStorageService(job);
+                if (cloudStorageService == null) {
+                    logger.error(String.format("No cloud storage service with id '%1$s' for job '%2$s'. Cloud files cannot be listed", job.getStorageServiceId(), job.getId()));
+                    return generateJSONResponseMAV(false, null, "No cloud storage service found for job");
+                } else {
+                    CloudFileInformation[] fileDetails = cloudStorageService.listJobFiles(job);
+                    fileMap.put(Integer.toString(jobId), fileDetails);
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Error fetching output directory information.", e);
+            return generateJSONResponseMAV(false, null, "Error fetching output directory information");
+        }
+
+        return generateJSONResponseMAV(true, fileMap, "");
+    }
+
 
     /**
      * Sends the contents of a job file to the client.

@@ -13,23 +13,6 @@ Ext.define('vegl.widgets.DetailsPanel', {
      */
     constructor : function(config) {
         var ddfStyle = 'float:none;margin: 5px;display:inline-block;';
-        var ddfResponsiveCfg = {
-            small: {
-                cls: 'vl-job-details-small'
-            },
-            normal: {
-                cls: 'vl-job-details'
-            }
-        };
-        var ddfSetCls = function(cls) {
-            if (this.rendered) {
-                var el = this.getEl();
-                var currentCls = el.getAttribute('class').replace(/vl-job-details[^ ]*/g, '');
-                el.dom.className = currentCls + ' ' + cls;
-            } else {
-                this.on('afterrender', this.setCls, this, {single: true, args: [cls]});
-            }
-        };
 
         Ext.apply(config, {
             width: '100%',
@@ -53,9 +36,7 @@ Ext.define('vegl.widgets.DetailsPanel', {
                     fieldLabel: 'Status',
                     margin: '0 10 0 10',
                     plugins: 'responsive',
-                    responsiveConfig: ddfResponsiveCfg,
-                    style: ddfStyle,
-                    setCls: ddfSetCls
+                    style: ddfStyle
                 },{
                     xtype: 'datadisplayfield',
                     itemId: 'jobid',
@@ -63,9 +44,7 @@ Ext.define('vegl.widgets.DetailsPanel', {
                     cls: 'vl-job-details',
                     margin: '0 10 0 10',
                     plugins: 'responsive',
-                    responsiveConfig: ddfResponsiveCfg,
-                    style: ddfStyle,
-                    setCls: ddfSetCls
+                    style: ddfStyle
                 },{
                     xtype: 'datadisplayfield',
                     itemId: 'ami',
@@ -73,9 +52,7 @@ Ext.define('vegl.widgets.DetailsPanel', {
                     cls: 'vl-job-details',
                     margin: '0 10 0 10',
                     plugins: 'responsive',
-                    responsiveConfig: ddfResponsiveCfg,
-                    style: ddfStyle,
-                    setCls: ddfSetCls
+                    style: ddfStyle
                 },{
                     xtype: 'datadisplayfield',
                     itemId: 'type',
@@ -83,9 +60,7 @@ Ext.define('vegl.widgets.DetailsPanel', {
                     cls: 'vl-job-details',
                     margin: '0 10 0 10',
                     plugins: 'responsive',
-                    responsiveConfig: ddfResponsiveCfg,
-                    style: ddfStyle,
-                    setCls: ddfSetCls
+                    style: ddfStyle
                 },{
                     xtype: 'datadisplayfield',
                     itemId: 'submitted',
@@ -93,9 +68,7 @@ Ext.define('vegl.widgets.DetailsPanel', {
                     cls: 'vl-job-details',
                     margin: '0 10 0 10',
                     plugins: 'responsive',
-                    responsiveConfig: ddfResponsiveCfg,
-                    style: ddfStyle,
-                    setCls: ddfSetCls
+                    style: ddfStyle
                 }]
             },{
                 xtype: 'container',

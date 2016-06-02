@@ -23,7 +23,8 @@ Ext.define('vegl.widgets.DataSelectionPanel', {
             config.cswRecords = [];
         }
 
-        var dataItems = vegl.widgets.DataSelectionPanelRow.parseCswRecords(config.cswRecords, this.region);
+        var parsingResults = vegl.widgets.DataSelectionPanelRow.parseCswRecords(config.cswRecords, this.region);
+        var dataItems = parsingResults.dataItems;
 
         var groupingFeature = Ext.create('Ext.grid.feature.Grouping',{
             groupHeaderTpl: '{name} ({[values.rows.length]} {[values.rows.length > 1 ? "Items" : "Item"]})'
@@ -96,6 +97,11 @@ Ext.define('vegl.widgets.DataSelectionPanel', {
         for (var i = 0; i < dataItems.length; i++) {
             this._updateDescription(dataItems[i]);
         }
+
+        //After we load our CSW data, load up VL job files
+        if (!Ext.isEmpty(parsingResults.vlJobRecords)) {
+            this.on('afterrender', Ext.bind(this._addVLJobFiles, this, [parsingResults.vlJobRecords], false));
+        }
     },
 
     /**
@@ -125,6 +131,66 @@ Ext.define('vegl.widgets.DataSelectionPanel', {
             }
 
             portal.util.FileDownloader.downloadFile(dl.get('url'),[],dlOptions.method);
+        });
+    },
+
+    _addVLJobFiles : function(vlJobRecords) {
+        var mask = new Ext.LoadMask({
+            msg: 'Loading job files...',
+            target: this.up('window')
+        });
+        mask.show();
+
+        var jobIds = vlJobRecords.map(function(rec) {
+            return rec.get('id').split('-')[1];
+        });
+
+        Ext.Ajax.request({
+            url: 'secure/manyJobFiles.do',
+            params: {
+                jobId: jobIds
+            },
+            scope: this,
+            callback: function(options, success, response) {
+                mask.hide();
+                if (!success) {
+                    return;
+                }
+
+                var responseObj = Ext.JSON.decode(response.responseText);
+                if (!responseObj.success) {
+                    return;
+                }
+
+                var newRows = [];
+                for (var i = 0; i < vlJobRecords.length; i++) {
+                    var files = responseObj.data[jobIds[i]];
+                    if (!Ext.isEmpty(files)) {
+                        for (var j = 0; j < files.length; j++) {
+
+                            var fakeOnlineResource = Ext.create('portal.csw.OnlineResource', {
+                                url: '',
+                                name: files[j].name,
+                                description: '',
+                                type: 'ANVGL-JOB-FILE'
+                            });
+
+                            newRows.push({
+                                resourceType : vlJobRecords[i].get('name'),
+                                name : files[j].name,
+                                description : '',
+                                selected : false,
+                                cswRecord : vlJobRecords[i],
+                                onlineResource : fakeOnlineResource,
+                                estimateResource : null,
+                                downloadOptions : null
+                            });
+                        }
+                    }
+                }
+
+                this.getStore().loadData(newRows);
+            }
         });
     },
 
@@ -348,13 +414,17 @@ Ext.define('vegl.widgets.DataSelectionPanelRow', {
          */
         parseCswRecords : function(cswRecords, defaultBbox) {
             var dataItems = [];
+            var vlJobRecords = [];
             for (var i = 0; i < cswRecords.length; i++) {
                 var cswRecord = cswRecords[i];
+                if (cswRecord.get('id').startsWith('vljob-')) {
+                    vlJobRecords.push(cswRecord);
+                } else {
+                    dataItems = dataItems.concat(vegl.widgets.DataSelectionPanelRow.parseCswRecord(cswRecord, defaultBbox));
+                }
+            }
 
-                dataItems = dataItems.concat(vegl.widgets.DataSelectionPanelRow.parseCswRecord(cswRecord, defaultBbox));
-          }
-
-          return dataItems;
+            return {dataItems: dataItems, vlJobRecords: vlJobRecords};
         }
     },
 

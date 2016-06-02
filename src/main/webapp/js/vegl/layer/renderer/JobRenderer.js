@@ -7,7 +7,20 @@ Ext.define('vegl.layer.renderer.JobRenderer', {
 
     polygonColor : null,
 
+    jobStore: null,
+
     constructor: function(config) {
+        this.jobStore = Ext.create('Ext.data.Store', {
+            model: 'vegl.models.Job',
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json',
+                    rootProperty: 'data'
+                }
+            }
+        });
+
         this.callParent(arguments);
     },
 
@@ -59,20 +72,26 @@ Ext.define('vegl.layer.renderer.JobRenderer', {
                     return;
                 }
 
+                this.jobStore.loadRawData(responseObj);
+
                 //Iterate over our jobs, pull out the downloads and associated BBoxs
                 //Use the BBoxs to add geometry to the map
                 var primitives = [];
-                for (var i = 0; i < responseObj.data.length; i++) {
-                    var job = Ext.create('vegl.models.Job', responseObj.data[i]);
-                    if (job.get('status') !== vegl.models.Job.STATUS_DONE) {
+                var allRecords = [];
+                for (var i = 0; i < this.jobStore.getCount(); i++) {
+                    var job = this.jobStore.getAt(i);
+
+                    if (job.get('status') === vegl.models.Job.STATUS_UNSUBMITTED) {
                         continue;
                     }
 
                     var fakeRecord = Ext.create('portal.csw.CSWRecord', {
-                        id: 'job-' + job.get('id'),
+                        id: 'vljob-' + job.get('id'),
                         name: job.get('name'),
-                        contactOrg: job.get('status')
+                        contactOrg: job.get('status'),
+                        onlineResources: []
                     });
+                    var allBboxes = [];
                     var downloads = job.get('jobDownloads');
                     for (var j = 0; j < downloads.length; j++) {
                         var bbox = Ext.create('portal.util.BBox', {
@@ -81,20 +100,23 @@ Ext.define('vegl.layer.renderer.JobRenderer', {
                             eastBoundLongitude: downloads[j].get('eastBoundLongitude'),
                             westBoundLongitude: downloads[j].get('westBoundLongitude'),
                         });
+                        allBboxes.push(bbox);
 
-
-                        var polygonList = bbox.toPolygon(this.map, (this._getPolygonColor(this.polygonColor))[0], 4, 0.75,(this._getPolygonColor(this.polygonColor))[1], 0.4, undefined,
+                        var polygonList = bbox.toPolygon(this.map, (this._getPolygonColorForJob(job))[0], 4, 0.75,(this._getPolygonColorForJob(job))[1], 0.4, undefined,
                                 job.get('id'), fakeRecord, undefined, this.parentLayer);
 
                         for (var k = 0; k < polygonList.length; k++) {
                             primitives.push(polygonList[k]);
                         }
                     }
+                    fakeRecord.set('geographicElements', allBboxes);
+                    allRecords.push(fakeRecord);
                 }
 
                 if (!Ext.isEmpty(primitives)) {
                     this.primitiveManager.addPrimitives(primitives);
                 }
+                this.parentLayer.set('cswRecords', allRecords);
                 this.fireEvent('renderfinished', this);
                 callback(this, resources, filterer, true);
             }
@@ -104,12 +126,23 @@ Ext.define('vegl.layer.renderer.JobRenderer', {
     },
 
 
-    _getPolygonColor : function(colorCSV){
-        if(colorCSV && colorCSV.length > 0){
-            var colorArray=colorCSV.split(",");
-            return colorArray;
-        }else{
-            //default blue color used if no color is specified
+    _getPolygonColorForJob: function(job) {
+        switch(job.get('status')) {
+
+        case vegl.models.Job.STATUS_FAILED:
+        case vegl.models.Job.STATUS_ERROR:
+        case vegl.models.Job.STATUS_CANCELLED:
+            return ['#F70000','#FC0000'];
+
+        case vegl.models.Job.STATUS_ACTIVE:
+            return ['#00F22C','#00F22C'];
+
+        case vegl.models.Job.STATUS_PENDING:
+        case vegl.models.Job.STATUS_INQUEUE:
+        case vegl.models.Job.STATUS_PROVISIONING:
+            return ['#EFEF00','#EFEF00'];
+
+        default:
             return ['#0003F9','#0055FE'];
         }
     },
@@ -140,6 +173,8 @@ Ext.define('vegl.layer.renderer.JobRenderer', {
      */
     removeData : function() {
         this.primitiveManager.clearPrimitives();
+        this.jobStore.removeAll();
+        this.parentLayer.set('cswRecords', []);
     },
 
 
