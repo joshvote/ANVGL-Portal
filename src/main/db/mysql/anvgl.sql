@@ -106,6 +106,19 @@ CREATE TABLE `downloads` (
         ON DELETE CASCADE
 );
 
+CREATE TABLE `dependencies` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `jobId` int(11) NOT NULL,
+  `type` varchar(45) DEFAULT NULL,
+  `identifier` varchar(64) DEFAULT NULL,
+  `version` varchar(45) DEFAULT NULL,
+  `repository` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobId` (`jobId`),
+  CONSTRAINT `dependencies_ibfk_1` FOREIGN KEY (`jobId`) REFERENCES `jobs` (`id`) ON DELETE CASCADE
+);
+
+
 CREATE TABLE `jobs_audit_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `jobId` int(11) NOT NULL,

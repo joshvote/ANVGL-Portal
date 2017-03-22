@@ -47,6 +47,9 @@ public class VEGLJob extends CloudJob implements Cloneable {
     /** A list of VglDownload objects associated with this job*/
     private List<VglDownload> jobDownloads = new ArrayList<>();
 
+    /** A list of VglDependency objects associated with this job*/
+    private List<VglDependency> jobDependencies = new ArrayList<>();
+
     /** A list of FileInformation objects associated with this job*/
     private List<FileInformation> jobFiles = new ArrayList<>();
 
@@ -227,6 +230,17 @@ public class VEGLJob extends CloudJob implements Cloneable {
         }
     }
 
+
+    public List<VglDependency> getJobDependencies() {
+        return jobDependencies;
+    }
+
+    public void setJobDependencies(List<VglDependency> jobDependencies) {
+        this.jobDependencies = jobDependencies;
+        for (VglDependency dep : jobDependencies) {
+            dep.setParent(this);
+        }
+    }
 
     public List<FileInformation> getJobFiles() {
         return jobFiles;

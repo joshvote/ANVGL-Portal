@@ -363,6 +363,7 @@
                 <value>vglparameter.hbm.xml</value>
                 <value>vgljobsauditlog.hbm.xml</value>
                 <value>vgldownload.hbm.xml</value>
+                <value>vgldependency.hbm.xml</value>
                 <value>vglsignature.hbm.xml</value>
                 <value>anvgluser.hbm.xml</value>
                 <value>anvglauthority.hbm.xml</value>

@@ -41,6 +41,11 @@
             <key column="jobId" />
             <one-to-many class="org.auscope.portal.server.vegl.VglDownload" />
         </bag>
+        
+        <bag name="jobDependencies" lazy="false" cascade="all-delete-orphan" inverse="true">
+            <key column="jobId" />
+            <one-to-many class="org.auscope.portal.server.vegl.VglDependency" />
+        </bag>
 
         <set name="jobSolutions"
              table="job_solutions"

@@ -17,6 +17,7 @@ import org.auscope.portal.core.cloud.ComputeType;
 import org.auscope.portal.core.services.PortalServiceException;
 import org.auscope.portal.core.services.cloud.SshCloudConnector.ExecResult;
 import org.auscope.portal.server.vegl.VEGLJob;
+import org.auscope.portal.server.vegl.VglDependency;
 import org.auscope.portal.server.web.security.NCIDetails;
 
 import com.jcraft.jsch.Session;
@@ -152,6 +153,21 @@ public class CloudComputeServiceNci extends CloudComputeService {
             wallTimeString
         });
 
+        StringBuilder dependencies = new StringBuilder();
+        for (VglDependency dep : job.getJobDependencies()) {
+            if (dep.getIdentifierTyped() == VglDependency.DependencyType.HPC) {
+                dependencies.append("module load ");
+                if (StringUtils.isEmpty(dep.getVersion())) {
+                    dependencies.append(dep.getIdentifier());
+                } else {
+                    dependencies.append(dep.getIdentifier());
+                    dependencies.append('/');
+                    dependencies.append(dep.getVersion());
+                }
+                dependencies.append('\n');
+            }
+        }
+
         String runJobContents = MessageFormat.format(getNamedResourceString("nci-run.job.tpl"), new Object[] {
             job.getProperty(NCIDetails.PROPERTY_NCI_PROJECT),
             job.getId(),
@@ -161,8 +177,8 @@ public class CloudComputeServiceNci extends CloudComputeService {
             extractParamFromComputeType("ncpus", job.getComputeInstanceType()),
             extractParamFromComputeType("mem", job.getComputeInstanceType()),
             extractParamFromComputeType("jobfs", job.getComputeInstanceType()),
-            "module load escript/5.0", //TODO: Extract these from the solution centre
-            runCommand + " -n $VL_TOTAL_NODES -p $VL_CPUS_PER_NODE" //TODO: Extract these from the solution centre
+            dependencies.toString(),
+            runCommand + " -n $VL_TOTAL_NODES -p $VL_CPUS_PER_NODE"
         });
 
         //storageService.uploadJobFile(job, files);
